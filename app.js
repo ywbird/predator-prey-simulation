@@ -3,6 +3,9 @@ const container = document.getElementById("container")
 const entities = []
 
 const ENTITY_RADIOUS = 7
+const DEMAGE_MAX = 100
+const PREY_PERCENTAGE = 30
+const ENTITES_COUNT = 40
 
 class Entity {
     constructor ( x, y, demage, type ) {
@@ -21,16 +24,17 @@ class Entity {
         }
         ctx.arc(this.x, this.y, this.highlight ? ENTITY_RADIOUS * 1.2 : ENTITY_RADIOUS, 0, 2 * Math.PI)
         ctx.stroke()
-        if (this.highlight) {
-            ctx.fillStyle = `${ctx.strokeStyle}77`
+        // if (this.highlight) {
+            // ctx.fillStyle = `${ctx.strokeStyle}${Math.round((10 / 100) * 255).toString(16)}`
+            ctx.fillStyle = `${ctx.strokeStyle}${Math.round((this.demage / 100) * 255).toString(16).padStart(2,"0")}`
             ctx.arc(this.x, this.y, this.highlight ? ENTITY_RADIOUS * 1.2 : ENTITY_RADIOUS, 0, 2 * Math.PI)
             ctx.fill()
-        }
+        // }
         ctx.closePath()
     }
 }
 
-class Renderer {
+class Simulation {
     constructor ( width, height, container ) {
         this.width = width
         this.height = height
@@ -63,10 +67,7 @@ class Renderer {
             y: 0
         }
         
-        this.entities = []
-        for (let i=0;i<40;i++) {
-            this.entities.push( new Entity( this.width * Math.random(), this.height * Math.random(), 10, Math.random() > 0.8 ? "human" : "predator" ) )
-        }
+        this.resetEntities()
     }
     
     run () {
@@ -126,15 +127,39 @@ class Renderer {
         
         this.entities.filter( entity => {
             entity.highlight = (entity.x-this.mouse.x)**2 + (entity.y-this.mouse.y)**2 <= ENTITY_RADIOUS**2
+            return (entity.x-this.mouse.x)**2 + (entity.y-this.mouse.y)**2 <= ENTITY_RADIOUS**2
         })
+        
+    }
+    
+    resetEntities () {
+        this.entities = []
+        for (let i = 0; i < ENTITES_COUNT; i++) {
+            const randoms = [...window.crypto.getRandomValues(new Uint8Array(4))].
+map(s=>s/2**8)
+            this.entities.push( new Entity(
+                randoms[0] * this.width, 
+                randoms[1] * this.height,
+                randoms[2] * DEMAGE_MAX, 
+                randoms[3] < PREY_PERCENTAGE/100 ? "human" : "predator"
+            ) )
+        }
+    }
+    
+    newEntity () {
+         
     }
     
 }
 
+
+
 function init() {
-    const renderer = new Renderer( 400, 400, container )
+    const simul = new Simulation( 400, 400, container )
     
-    renderer.run()
+    document.getElementById("reset").addEventListener("click", simul.resetEntities.bind(simul))
+    
+    simul.run()
 }
 
 init()
